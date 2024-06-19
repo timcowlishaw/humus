@@ -1,11 +1,75 @@
-use warp::Filter;
+use warp::{http, Filter};
 
+use parking_lot::RwLock;
+use std::sync::Arc;
+use std::collections::HashMap;
+
+type Items = HashMap<String, HashMap<String, String>>;
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+struct Item {
+    entity: String,
+    attribute: String,
+    value: String,
+}
+
+#[derive(Clone)]
+struct Store {
+    store: Arc<RwLock<Items>>
+}
+
+impl Store {
+    fn new() -> Self {
+        Store {
+            store: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+}
+
+async fn add_entry(
+    item: Item,
+    store: Store
+    ) -> Result<impl warp::Reply, warp::Rejection> {
+    store.store.write().entry(item.entity).or_insert(HashMap::new()).insert(item.attribute, item.value);
+    Ok(warp::reply::with_status(
+            "OK",
+            http::StatusCode::CREATED,
+            ))
+}
+
+async fn get_entries(
+    store: Store
+    ) -> Result<impl warp::Reply, warp::Rejection> {
+        let result = store.store.read();
+        Ok(warp::reply::json(&*result))
+}
+
+
+fn json_body() -> impl Filter<Extract = (Item,), Error = warp::Rejection> + Clone {
+    // When accepting a body, we want a JSON body
+    // (and to reject huge payloads)...
+    warp::body::content_length_limit(1024 * 16).and(warp::body::json())
+}
 
 #[tokio::main]
 async fn main() {
-    let hello = warp::path!("hello" / String)
-        .map(|name| format!("Hello, {}!", name));
-    warp::serve(hello)
+    let store = Store::new();
+    let store_filter =  warp::any().map(move || store.clone());
+
+    let add_item = warp::post()
+        .and(warp::path::end())
+        .and(json_body())
+        .and(store_filter.clone())
+        .and_then(add_entry);
+
+    let get_items = warp::get()
+        .and(warp::path::end())
+        .and(store_filter.clone())
+        .and_then(get_entries);
+
+    let routes = add_item.or(get_items);
+
+    warp::serve(routes)
         .run(([127,0,0,1], 3030))
         .await;
 }
