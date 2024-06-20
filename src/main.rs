@@ -1,46 +1,10 @@
+mod store;
+
+use store::{SynchronizedStore, Entity};
+
 use warp::{http, Filter};
 
-use parking_lot::RwLock;
-use std::sync::Arc;
-use std::collections::{HashMap, BTreeMap};
 
-type Entity = HashMap<String, String>;
-
-type Entities = HashMap<String, Entity>;
-
-struct Key {
-    entity: String,
-    attribute: String
-}
-
-type PruneIndex = BTreeMap<u64, Key>;
-
-struct Store {
-    entities: Entities,
-    prune_index: PruneIndex
-}
-
-#[derive(Clone)]
-struct SynchronizedStore {
-    store: Arc<RwLock<Store>>
-}
-
-impl Store {
-    fn new() -> Self {
-        Store {
-            entities: HashMap::new(),
-            prune_index: BTreeMap::new(),
-        }
-    }
-}
-
-impl SynchronizedStore {
-    fn new() -> Self {
-        SynchronizedStore {
-            store: Arc::new(RwLock::new(Store::new())),
-        }
-    }
-}
 
 async fn create_entity(
     key: String,
