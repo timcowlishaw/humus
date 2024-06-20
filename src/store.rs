@@ -13,29 +13,41 @@ struct Key {
 
 type PruneIndex = BTreeMap<u64, Key>;
 
-pub(crate) struct Store {
-    pub(crate) entities: Entities,
+struct StoreState {
+    entities: Entities,
     prune_index: PruneIndex
 }
 
-#[derive(Clone)]
-pub(crate) struct SynchronizedStore {
-    pub(crate) store: Arc<RwLock<Store>>
-}
-
-impl Store {
+impl StoreState {
      fn new() -> Self {
-        Store {
+        StoreState {
             entities: HashMap::new(),
             prune_index: BTreeMap::new(),
         }
     }
 }
 
-impl SynchronizedStore {
+#[derive(Clone)]
+pub(crate) struct Store {
+    state: Arc<RwLock<StoreState>>
+}
+
+impl Store {
     pub(crate) fn new() -> Self {
-        SynchronizedStore {
-            store: Arc::new(RwLock::new(Store::new())),
+        Store {
+            state: Arc::new(RwLock::new(StoreState::new())),
         }
+    }
+
+    pub(crate) fn create_entity(&mut self, key : String, entity : Entity) -> () {
+        self.state.write().entities.insert(key, entity);
+    }
+
+    pub(crate) fn get_entity(self, key : String) -> Option<Entity> {
+        self.state.read().entities.get(&key).cloned()
+    }
+
+    pub(crate) fn get_entities(self) -> Entities {
+        self.state.read().entities.clone()
     }
 }

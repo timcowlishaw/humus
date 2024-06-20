@@ -1,6 +1,6 @@
 mod store;
 
-use store::{SynchronizedStore, Entity};
+use store::{Store, Entity};
 
 use warp::{http, Filter};
 
@@ -9,9 +9,9 @@ use warp::{http, Filter};
 async fn create_entity(
     key: String,
     entity: Entity,
-    store: SynchronizedStore
+    mut store: Store
     ) -> Result<impl warp::Reply, warp::Rejection> {
-    store.store.write().entities.insert(key, entity);
+    store.create_entity(key, entity);
     Ok(warp::reply::with_status(
             "OK",
             http::StatusCode::CREATED,
@@ -19,21 +19,19 @@ async fn create_entity(
 }
 
 async fn get_entities(
-    store: SynchronizedStore
+    store: Store
     ) -> Result<impl warp::Reply, warp::Rejection> {
-        let store_lock = store.store.read();
-        let result = store_lock.entities.clone();
+        let result = store.get_entities();
         Ok(warp::reply::json(&result))
 }
 
 async fn get_entity(
     key: String,
-    store: SynchronizedStore
+    store: Store
     ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
-        let store_lock = store.store.read();
-        let result = store_lock.entities.get(&key);
+        let result = store.get_entity(key);
         match result {
-            Some(entity) => Ok(Box::new(warp::reply::json(&*entity))),
+            Some(entity) => Ok(Box::new(warp::reply::json(&entity))),
             None => Ok(Box::new(warp::reply::with_status(
                 "Not found",
                 http::StatusCode::NOT_FOUND
@@ -49,7 +47,7 @@ fn json_body() -> impl Filter<Extract = (Entity,), Error = warp::Rejection> + Cl
 
 #[tokio::main]
 async fn main() {
-    let store = SynchronizedStore::new();
+    let store = Store::new();
     let store_filter =  warp::any().map(move || store.clone());
 
     let create_entity_route = warp::put()
