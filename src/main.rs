@@ -29,7 +29,7 @@ async fn get_entity(
     key: String,
     store: Store
     ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
-        let result = store.get_entity(key);
+        let result = store.get_entity(&key);
         match result {
             Some(entity) => Ok(Box::new(warp::reply::json(&entity))),
             None => Ok(Box::new(warp::reply::with_status(
