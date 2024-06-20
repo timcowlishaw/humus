@@ -2,21 +2,42 @@ use warp::{http, Filter};
 
 use parking_lot::RwLock;
 use std::sync::Arc;
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 
 type Entity = HashMap<String, String>;
 
 type Entities = HashMap<String, Entity>;
 
-#[derive(Clone)]
+struct Key {
+    entity: String,
+    attribute: String
+}
+
+type PruneIndex = BTreeMap<u64, Key>;
+
 struct Store {
-    store: Arc<RwLock<Entities>>
+    entities: Entities,
+    prune_index: PruneIndex
+}
+
+#[derive(Clone)]
+struct SynchronizedStore {
+    store: Arc<RwLock<Store>>
 }
 
 impl Store {
     fn new() -> Self {
         Store {
-            store: Arc::new(RwLock::new(HashMap::new())),
+            entities: HashMap::new(),
+            prune_index: BTreeMap::new(),
+        }
+    }
+}
+
+impl SynchronizedStore {
+    fn new() -> Self {
+        SynchronizedStore {
+            store: Arc::new(RwLock::new(Store::new())),
         }
     }
 }
@@ -24,9 +45,9 @@ impl Store {
 async fn create_entity(
     key: String,
     entity: Entity,
-    store: Store
+    store: SynchronizedStore
     ) -> Result<impl warp::Reply, warp::Rejection> {
-    store.store.write().insert(key, entity);
+    store.store.write().entities.insert(key, entity);
     Ok(warp::reply::with_status(
             "OK",
             http::StatusCode::CREATED,
@@ -34,18 +55,19 @@ async fn create_entity(
 }
 
 async fn get_entities(
-    store: Store
+    store: SynchronizedStore
     ) -> Result<impl warp::Reply, warp::Rejection> {
-        let result = store.store.read();
-        Ok(warp::reply::json(&*result))
+        let store_lock = store.store.read();
+        let result = store_lock.entities.clone();
+        Ok(warp::reply::json(&result))
 }
 
 async fn get_entity(
     key: String,
-    store: Store
+    store: SynchronizedStore
     ) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
         let store_lock = store.store.read();
-        let result = store_lock.get(&key);
+        let result = store_lock.entities.get(&key);
         match result {
             Some(entity) => Ok(Box::new(warp::reply::json(&*entity))),
             None => Ok(Box::new(warp::reply::with_status(
@@ -63,7 +85,7 @@ fn json_body() -> impl Filter<Extract = (Entity,), Error = warp::Rejection> + Cl
 
 #[tokio::main]
 async fn main() {
-    let store = Store::new();
+    let store = SynchronizedStore::new();
     let store_filter =  warp::any().map(move || store.clone());
 
     let create_entity_route = warp::put()
@@ -72,6 +94,13 @@ async fn main() {
         .and(json_body())
         .and(store_filter.clone())
         .and_then(create_entity);
+
+    //let update_entity_route = warp::patch()
+    //    .and(warp::path::param())
+    //    .and(warp::path::end())
+    //    .and(json_body())
+    //    .and(store_filter.clone())
+    //    .and_then(update_entity);
 
     let get_entities_route = warp::get()
         .and(warp::path::end())
@@ -85,8 +114,9 @@ async fn main() {
         .and_then(get_entity);
 
     let routes = create_entity_route
-        .or(get_entities_route)
-        .or(get_entity_route);
+        //.or(update_entity_route)
+        .or(get_entity_route)
+        .or(get_entities_route);
 
     warp::serve(routes)
         .run(([127,0,0,1], 3030))
