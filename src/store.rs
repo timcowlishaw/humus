@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::collections::{HashMap, BTreeMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const LIFETIME : u64 = 60 * 1;
+const LIFETIME : u64 = 60;
 
 fn get_now() -> u64 {
     match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -45,7 +45,7 @@ impl StoreState {
         }
     }
 
-     fn insert(&mut self, entity_key: String, entity: Entity) -> () {
+     fn insert(&mut self, entity_key: String, entity: Entity) {
         self.prune();
         self.entities.insert(entity_key.clone(), entity.clone());
         let expiry = get_expiry();
@@ -68,24 +68,24 @@ impl StoreState {
          self.entities.clone()
      }
 
-     fn refresh_entity_lifetime(&mut self, entity_key : &String) -> () {
+     fn refresh_entity_lifetime(&mut self, entity_key : &String) {
          let new_expiry = get_expiry();
-         self.entities.get(entity_key).and_then(|entity| {
+         self.entities.get(entity_key).map(|entity| {
              for attribute_key in entity.keys() {
                  let key = Key { entity: entity_key.clone(), attribute: attribute_key.clone() };
-                 self.reverse_prune_index.insert(key.clone(), new_expiry).as_ref().and_then(|old_expiry| {
-                     self.prune_index.get_mut(old_expiry).and_then(|expiring_keys| {
+                 self.reverse_prune_index.insert(key.clone(), new_expiry).as_ref().map(|old_expiry| {
+                     self.prune_index.get_mut(old_expiry).map(|expiring_keys| {
                          expiring_keys.remove(&key);
-                         Some(())
+                         
                      });
-                     Some(())
+                     
                  });
              }
-             Some(())
+             
          });
      }
 
-     fn prune(&mut self) -> () {
+     fn prune(&mut self) {
          let mut keys_to_expire : Vec<Key> = Vec::new();
          let mut past_expiries : Vec<u64> = Vec::new();
          for (expiry, keys) in self.prune_index.range(0..get_now()) {
@@ -100,12 +100,12 @@ impl StoreState {
          let mut entities_to_expire : Vec<String> = Vec::new();
          for key in keys_to_expire {
              self.reverse_prune_index.remove(&key);
-             self.entities.get_mut(&key.entity).and_then(|entity| {
+             self.entities.get_mut(&key.entity).map(|entity| {
                  entity.remove(&key.attribute);
                  if entity.is_empty() {
                      entities_to_expire.push(key.entity);
                  }
-                 Some(())
+                 
              });
          }
          for key in entities_to_expire {
@@ -126,7 +126,7 @@ impl Store {
         }
     }
 
-    pub(crate) fn create_entity(&mut self, key : String, entity : Entity) -> () {
+    pub(crate) fn create_entity(&mut self, key : String, entity : Entity) {
         self.state.write().insert(key, entity);
     }
 
