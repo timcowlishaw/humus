@@ -6,7 +6,7 @@ _[(Anna Prendergrast (@Aprndrgrst), 18th November 2021)](https://twitter.com/APn
 
 This is a small experiment in deliberate data decay.  a simple (at present) in memory entity-attribute-value database that slowly forgets the things that you don't revisit.
 
-It's a side project from the sprawling mutual-aid skill exchange I'm doing with @jcalpickard that we're calling [_Enxaneta_](https://github.com/timcowlishaw/enxaneta).
+It's a side project from the sprawling mutual-aid skill exchange I'm doing with [@jcalpickard](https://github.com/jcalpickard) that we're calling [_Enxaneta_](https://github.com/timcowlishaw/enxaneta).
 
 The idea is that it forms a part of the infrastructure for some broader experiments on the affordances of deliberate data loss: A [counter-factual speculation](https://dl.acm.org/doi/fullHtml/10.1145/3577212) on digital technnologies that [refuse the logic](https://arxiv.org/abs/2010.08850) of scale and accumulation, and is very much inspired by [permacomputing](http://permacomputing.net/).
 
