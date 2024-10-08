@@ -45,6 +45,8 @@ Each entity attribute will persist for a number of seconds defined in the `HUMUS
 
 There's also an environment variable switch called `HUMUS_REFRESH_CHILD_ENTITIES`, which is, by default, unset. If this is set to any value, then accessing for instance `/path` will also refresh the "lifetime" of all the entities stored at paths underneath it (eg `/path/subpath`). If not, you need to access an object directly *at the url at which it was stored* to reset the decay timer - accessing a parent path will show it, but it will decay as if you had never accessed it. If this is confusing, don't worry about it. This option will probably go away very soon once i've worked out what works best.
 
+If you want to see more of what's going on internally, set the `RUST_LOG` env var to `debug` or `trace`.
+
 My plans for further development:
 
 Soon:
