@@ -1,7 +1,14 @@
 [package]
 name = "humus"
+description = "A composting database. This is a small experiment in deliberate data decaay: A simple in-memory database that slowly forgets the things that you don't revisit."
 version = "0.1.0"
 edition = "2021"
+license = "AGPL-3.0"
+license-file = "LICENSE.txt"
+repository = "https://github.com/timcowlishaw/humus"
+readme = "README.md"
+keywords = ["database", "permacomputing", "compost", "decay", "experimental"]
+categories = ["database-implementations", "games"]
 
 [dependencies]
 basic_trie = "2.0"

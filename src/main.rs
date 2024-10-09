@@ -2,6 +2,9 @@ mod store;
 
 use store::{Store, Entity};
 
+use std::env;
+use std::net::SocketAddr;
+
 use warp::{http, Filter};
 use warp::body::bytes;
 use warp::filters::path::FullPath;
@@ -43,6 +46,9 @@ fn json_body() -> impl Filter<Extract = (Entity,), Error = warp::Rejection> + Cl
 
 #[tokio::main]
 async fn main() {
+    let socket : SocketAddr = env::var("HUMUS_SOCKET_ADDRESS").ok()
+        .and_then(|var| { var.parse().ok() })
+        .unwrap_or(([127, 0 ,0, 1], 3030).into());
     pretty_env_logger::init();
     let store = Store::new();
     let store_filter =  warp::any().map(move || store.clone());
@@ -61,6 +67,6 @@ async fn main() {
     let routes = create_entity_route.or(get_entities_route);
 
     warp::serve(routes.with(warp::log("humus::main")))
-        .run(([127,0,0,1], 3030))
+        .run(socket)
         .await;
 }
