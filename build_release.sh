@@ -6,7 +6,7 @@ git merge-base --is-ancestor HEAD @{u}
 VERSION=`cargo read-manifest | jq -r .version`
 echo "Building release, version. $VERSION".
 echo "Tagging..."
-git tag v$VERSION
+git tag v$VERSION -m "Version: v$VERSION"
 git push --tags
 echo "Building release artefacts..."
 cargo build --release
