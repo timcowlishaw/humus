@@ -4,7 +4,6 @@ description = "A composting database. This is a small experiment in deliberate d
 version = "0.1.0"
 edition = "2021"
 license = "AGPL-3.0"
-license-file = "LICENSE.txt"
 repository = "https://github.com/timcowlishaw/humus"
 readme = "README.md"
 keywords = ["database", "permacomputing", "compost", "decay", "experimental"]
