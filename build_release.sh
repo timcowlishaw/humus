@@ -15,5 +15,5 @@ echo "Publishing docker image.."
 docker build -t timcowlishaw/humus:latest -t timcowlishaw/humus:$VERSION .
 docker push timcowlishaw/humus --all-tags
 echo "Publishing crate..."
-cargo publish --dry-run
+cargo publish
 echo "Done! Remember to create Github releases with the compiled artefacts"
